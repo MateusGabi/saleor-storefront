@@ -30,8 +30,10 @@ const useQuery = <
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await (saleor[query] as any)(variables, options);
-        setData((data as any).data);
+        if (!options.skip) {
+          const data = await (saleor[query] as any)(variables, options);
+          setData((data as any).data);
+        }
       } catch (e) {
         setError(e);
       } finally {

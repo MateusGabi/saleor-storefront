@@ -9,6 +9,7 @@ import { TokenAuth } from "../components/User/types/TokenAuth";
 import { authLink, getAuthToken, invalidTokenLink, setAuthToken } from "./auth";
 import { MUTATIONS } from "./mutations";
 import { QUERIES } from "./queries";
+import { UserDetails } from "./queries/types/UserDetails";
 import { InferOptions, MapFn, QueryShape } from "./types";
 import { getErrorsFromData, isDataEmpty } from "./utils";
 
@@ -28,16 +29,23 @@ export const createSaleorClient = (url?: string, cache = new InMemoryCache()) =>
   });
 
 export class SaleorAPI {
+  getCheckoutDetails = this.fireQuery(
+    QUERIES.CheckoutDetails,
+    data => data.checkout
+  );
+
   getProductDetails = this.fireQuery(
     QUERIES.ProductDetails,
     data => data.product
   );
 
-  getUserDetails = this.fireQuery(QUERIES.UserDetails, data => data.me);
-
   getUserOrderDetails = this.fireQuery(
     QUERIES.UserOrders,
     data => data.orderByToken
+  );
+
+  getUserCheckout = this.fireQuery(QUERIES.UserCheckout, data =>
+    data.me ? data.me.checkout : null
   );
 
   setUserDefaultAddress = this.fireQuery(
@@ -55,6 +63,20 @@ export class SaleorAPI {
   constructor(client: ApolloClient<any>) {
     this.client = client;
   }
+
+  getUserDetails = (
+    options?: Omit<InferOptions<QUERIES["UserDetails"]>, "variables">
+  ) => {
+    if (this.isLoggedIn()) {
+      return this.fireQuery(QUERIES.UserDetails, data => data.me)(
+        null,
+        options
+      );
+    }
+    return new Promise<{ data: UserDetails["me"] }>((resolve, _reject) => {
+      resolve({ data: null });
+    });
+  };
 
   signIn = (
     variables: InferOptions<MUTATIONS["TokenAuth"]>["variables"],
